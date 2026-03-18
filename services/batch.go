@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"sync"
 	"time"
 	"whisk-clone/models"
@@ -8,6 +9,7 @@ import (
 
 type BatchSession struct {
 	ID          string
+	UserID      string
 	Jobs        []models.BatchJobInput
 	Results     []models.BatchJobResult
 	Events      chan models.SSEEvent
@@ -26,13 +28,14 @@ func NewBatchService(generator *GeneratorService) *BatchService {
 	return &BatchService{generator: generator}
 }
 
-func (b *BatchService) CreateSession(id string, jobs []models.BatchJobInput, concurrency int) *BatchSession {
+func (b *BatchService) CreateSession(id, userID string, jobs []models.BatchJobInput, concurrency int) *BatchSession {
 	bufSize := len(jobs) * 3
 	if bufSize < 10 {
 		bufSize = 10
 	}
 	session := &BatchSession{
 		ID:          id,
+		UserID:      userID,
 		Jobs:        jobs,
 		Results:     make([]models.BatchJobResult, len(jobs)),
 		Events:      make(chan models.SSEEvent, bufSize),
@@ -92,7 +95,7 @@ func (b *BatchService) run(session *BatchSession, concurrency int) {
 				Payload:   map[string]interface{}{"index": i},
 			}
 
-			filename, err := b.generator.Generate(job.SubjectPrompt, job.ScenePrompt, job.StylePrompt, job.StylePreset, job.Width, job.Height)
+			filename, err := b.generator.GenerateWithUser(context.Background(), job.SubjectPrompt, job.ScenePrompt, job.StylePrompt, job.StylePreset, job.Width, job.Height, session.UserID)
 
 			session.mu.Lock()
 			if err != nil {

@@ -25,7 +25,8 @@ func BatchCreateHandler(batchSvc *services.BatchService) gin.HandlerFunc {
 		}
 
 		batchID := uuid.New().String()
-		batchSvc.CreateSession(batchID, req.Jobs, req.Concurrency)
+		userID := c.GetString("user_id")
+		batchSvc.CreateSession(batchID, userID, req.Jobs, req.Concurrency)
 
 		c.JSON(http.StatusAccepted, models.BatchResponse{
 			BatchID: batchID,
