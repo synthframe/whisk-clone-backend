@@ -36,8 +36,11 @@ func main() {
 		AllowCredentials: false,
 	}))
 
-	// Static file serving for generated images
-	r.Static("/outputs", cfg.OutputDir)
+	// Static file serving for generated images (no-store to prevent stale cache)
+	r.GET("/outputs/:filename", func(c *gin.Context) {
+		c.Header("Cache-Control", "no-store")
+		c.File(cfg.OutputDir + "/" + c.Param("filename"))
+	})
 
 	api := r.Group("/api")
 	{
