@@ -31,7 +31,7 @@ func (t *TogetherAI) AnalyzeImage(imageBase64 string, slotType string) (string, 
 	}
 
 	resp, err := t.HTTPClient.Post(
-		"https://whisk-image-gen.teamxquare867.workers.dev/analyze",
+		"https://whisk-image-gen.gimchan29.workers.dev/analyze",
 		"application/json",
 		bytes.NewReader(payload),
 	)
@@ -69,7 +69,7 @@ func (t *TogetherAI) GenerateImage(prompt string) ([]byte, error) {
 	}
 
 	resp, err := t.HTTPClient.Post(
-		"https://whisk-image-gen.teamxquare867.workers.dev",
+		"https://whisk-image-gen.gimchan29.workers.dev",
 		"application/json",
 		bytes.NewReader(payload),
 	)
