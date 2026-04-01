@@ -19,38 +19,49 @@ func Connect(databaseURL string) (*pgxpool.Pool, error) {
 
 func Migrate(pool *pgxpool.Pool) error {
 	_, err := pool.Exec(context.Background(), `
-		CREATE TABLE IF NOT EXISTS users (
+		CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+		CREATE TABLE IF NOT EXISTS character_sets (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-			email VARCHAR(255) UNIQUE NOT NULL,
-			name VARCHAR(255) NOT NULL,
-			password_hash VARCHAR(255) NOT NULL,
+			name TEXT NOT NULL,
+			description TEXT DEFAULT '',
+			global_style TEXT DEFAULT '',
 			created_at TIMESTAMPTZ DEFAULT NOW()
 		);
-		CREATE TABLE IF NOT EXISTS generated_images (
+
+		CREATE TABLE IF NOT EXISTS character_set_images (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-			user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-			storage_key VARCHAR(500) NOT NULL,
-			subject_prompt TEXT DEFAULT '',
-			scene_prompt TEXT DEFAULT '',
-			style_prompt TEXT DEFAULT '',
-			style_preset VARCHAR(50) DEFAULT '',
-			width INT DEFAULT 1024,
-			height INT DEFAULT 1024,
+			character_set_id UUID NOT NULL REFERENCES character_sets(id) ON DELETE CASCADE,
+			storage_key TEXT NOT NULL,
 			created_at TIMESTAMPTZ DEFAULT NOW()
 		);
+
+		CREATE TABLE IF NOT EXISTS batch_jobs (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			character_set_id UUID NOT NULL REFERENCES character_sets(id) ON DELETE CASCADE,
+			title TEXT DEFAULT '',
+			global_style TEXT DEFAULT '',
+			status TEXT NOT NULL DEFAULT 'queued',
+			width INT NOT NULL DEFAULT 1024,
+			height INT NOT NULL DEFAULT 1024,
+			total_count INT NOT NULL DEFAULT 0,
+			completed_count INT NOT NULL DEFAULT 0,
+			failed_count INT NOT NULL DEFAULT 0,
+			created_at TIMESTAMPTZ DEFAULT NOW(),
+			updated_at TIMESTAMPTZ DEFAULT NOW()
+		);
+
+		CREATE TABLE IF NOT EXISTS batch_items (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			batch_job_id UUID NOT NULL REFERENCES batch_jobs(id) ON DELETE CASCADE,
+			prompt_index INT NOT NULL,
+			prompt_text TEXT NOT NULL,
+			status TEXT NOT NULL DEFAULT 'queued',
+			image_key TEXT,
+			error TEXT DEFAULT '',
+			created_at TIMESTAMPTZ DEFAULT NOW(),
+			updated_at TIMESTAMPTZ DEFAULT NOW()
+		);
 	`)
-	if err != nil {
-		return err
-	}
-	// Add columns to existing tables if not present (idempotent migration)
-	_, _ = pool.Exec(context.Background(), `
-		ALTER TABLE generated_images
-			ADD COLUMN IF NOT EXISTS subject_prompt TEXT DEFAULT '',
-			ADD COLUMN IF NOT EXISTS scene_prompt TEXT DEFAULT '',
-			ADD COLUMN IF NOT EXISTS style_prompt TEXT DEFAULT '',
-			ADD COLUMN IF NOT EXISTS style_preset VARCHAR(50) DEFAULT '',
-			ADD COLUMN IF NOT EXISTS width INT DEFAULT 1024,
-			ADD COLUMN IF NOT EXISTS height INT DEFAULT 1024;
-	`)
-	return nil
+	return err
 }
