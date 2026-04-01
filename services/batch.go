@@ -102,7 +102,7 @@ func (p *BatchProcessor) process(ctx context.Context, batchID string) error {
 	return nil
 }
 
-func buildPrompt(name, description, setStyle, batchStyle, shotPrompt string) string {
+func buildPrompt(name, description, _ string, batchStyle, shotPrompt string) string {
 	parts := []string{
 		"Create a production-ready image for a persistent character set.",
 		"Keep the same identity, face, proportions, and overall vibe from the reference images.",
@@ -112,9 +112,6 @@ func buildPrompt(name, description, setStyle, batchStyle, shotPrompt string) str
 	}
 	if description != "" {
 		parts = append(parts, "Character profile: "+description+".")
-	}
-	if setStyle != "" {
-		parts = append(parts, "Character set style: "+setStyle+".")
 	}
 	if batchStyle != "" {
 		parts = append(parts, "Global batch style: "+batchStyle+".")
