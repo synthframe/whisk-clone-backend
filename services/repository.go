@@ -103,6 +103,7 @@ func (r *Repository) listCharacterReferences(ctx context.Context, id string) ([]
 		if err := rows.Scan(&ref.ID, &ref.StorageKey, &ref.CreatedAt); err != nil {
 			return nil, err
 		}
+		ref.ImageURL = "/outputs/" + ref.StorageKey
 		refs = append(refs, ref)
 	}
 	return refs, rows.Err()
