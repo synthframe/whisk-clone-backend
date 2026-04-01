@@ -85,6 +85,11 @@ func (r *Repository) GetCharacterSet(ctx context.Context, id string) (models.Cha
 	return set, nil
 }
 
+func (r *Repository) DeleteCharacterSet(ctx context.Context, id string) error {
+	_, err := r.db.Exec(ctx, `DELETE FROM character_sets WHERE id = $1`, id)
+	return err
+}
+
 func (r *Repository) listCharacterReferences(ctx context.Context, id string) ([]models.CharacterReference, error) {
 	rows, err := r.db.Query(ctx, `
 		SELECT id::text, storage_key, created_at

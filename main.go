@@ -85,6 +85,27 @@ func main() {
 		c.JSON(http.StatusOK, set)
 	})
 
+	api.DELETE("/character-sets/:id", func(c *gin.Context) {
+		set, err := repo.GetCharacterSet(c.Request.Context(), c.Param("id"))
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "character set not found"})
+			return
+		}
+
+		for _, reference := range set.References {
+			if deleteErr := storage.Delete(c.Request.Context(), reference.StorageKey); deleteErr != nil {
+				log.Printf("warning: failed to delete reference image %s: %v", reference.StorageKey, deleteErr)
+			}
+		}
+
+		if err := repo.DeleteCharacterSet(c.Request.Context(), set.ID); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.Status(http.StatusNoContent)
+	})
+
 	api.POST("/character-sets", func(c *gin.Context) {
 		name := strings.TrimSpace(c.PostForm("name"))
 		if name == "" {
@@ -95,7 +116,6 @@ func main() {
 		set, err := repo.CreateCharacterSet(c.Request.Context(), models.CreateCharacterSetInput{
 			Name:        name,
 			Description: strings.TrimSpace(c.PostForm("description")),
-			GlobalStyle: strings.TrimSpace(c.PostForm("global_style")),
 		})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
